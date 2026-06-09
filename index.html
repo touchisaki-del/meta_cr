@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meta クリエイティブ管理</title>
+<style>
+  :root {
+    --blue: #1877f2;
+    --blue-dark: #0d65d9;
+    --gray-bg: #f0f2f5;
+    --gray-border: #dde1e7;
+    --gray-text: #65676b;
+    --white: #ffffff;
+    --red: #e53e3e;
+    --green: #38a169;
+    --yellow: #d69e2e;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: var(--gray-bg); color: #1c1e21; font-size: 14px; }
+
+  header {
+    background: var(--blue);
+    color: white;
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  header h1 { font-size: 18px; font-weight: 700; }
+  header .badge { background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 12px; font-size: 11px; }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; background: white; border-radius: 8px; padding: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .tab { flex: 1; text-align: center; padding: 8px; border-radius: 6px; cursor: pointer; font-weight: 500; color: var(--gray-text); transition: all 0.15s; }
+  .tab.active { background: var(--blue); color: white; }
+  .tab:hover:not(.active) { background: var(--gray-bg); }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card h2 { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #1c1e21; }
+  .card h3 { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #1c1e21; }
+
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group label { font-size: 12px; font-weight: 600; color: var(--gray-text); text-transform: uppercase; letter-spacing: 0.4px; }
+  .form-group input, .form-group select, .form-group textarea {
+    border: 1.5px solid var(--gray-border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 14px;
+    font-family: var(--font);
+    transition: border-color 0.15s;
+    background: white;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    outline: none;
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(24,119,242,0.12);
+  }
+
+  .name-preview {
+    background: var(--gray-bg);
+    border: 1.5px dashed var(--gray-border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: #1c1e21;
+    word-break: break-all;
+    min-height: 40px;
+  }
+  .name-preview .placeholder { color: #bbb; font-style: italic; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 18px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+  }
+  .btn-primary { background: var(--blue); color: white; }
+  .btn-primary:hover { background: var(--blue-dark); }
+  .btn-secondary { background: var(--gray-bg); color: #1c1e21; border: 1.5px solid var(--gray-border); }
+  .btn-secondary:hover { background: #e4e6eb; }
+  .btn-danger { background: #fff0f0; color: var(--red); border: 1.5px solid #fecaca; }
+  .btn-danger:hover { background: #fee2e2; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-icon { padding: 6px 8px; }
+
+  .copy-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--blue);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 4px;
+  }
+  .copy-btn:hover { background: #e7f0ff; }
+
+  /* Table */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 10px 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--gray-text); border-bottom: 2px solid var(--gray-border); background: #fafbfc; }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--gray-border); vertical-align: middle; }
+  tr:hover td { background: #f7f9fc; }
+  .name-cell { font-family: 'Courier New', monospace; font-size: 12px; max-width: 320px; word-break: break-all; }
+
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .tag-blue { background: #e7f0ff; color: var(--blue); }
+  .tag-green { background: #f0fff4; color: var(--green); }
+  .tag-yellow { background: #fffbeb; color: var(--yellow); }
+  .tag-gray { background: var(--gray-bg); color: var(--gray-text); }
+  .tag-red { background: #fff5f5; color: var(--red); }
+
+  /* Search bar */
+  .search-row { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .search-input {
+    flex: 1; min-width: 200px;
+    border: 1.5px solid var(--gray-border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-family: var(--font);
+  }
+  .search-input:focus { outline: none; border-color: var(--blue); }
+  .filter-select {
+    border: 1.5px solid var(--gray-border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: var(--font);
+    background: white;
+  }
+
+  /* Analytics */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat-card { background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); text-align: center; }
+  .stat-card .num { font-size: 32px; font-weight: 700; color: var(--blue); }
+  .stat-card .lbl { font-size: 12px; color: var(--gray-text); font-weight: 500; margin-top: 4px; }
+
+  .chart-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .chart-bar-label { min-width: 120px; font-size: 12px; font-weight: 600; text-align: right; color: #1c1e21; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chart-bar-bg { flex: 1; background: var(--gray-bg); border-radius: 4px; height: 20px; overflow: hidden; }
+  .chart-bar-fill { height: 100%; background: var(--blue); border-radius: 4px; transition: width 0.4s ease; display: flex; align-items: center; justify-content: flex-end; padding-right: 6px; }
+  .chart-bar-fill span { font-size: 11px; font-weight: 700; color: white; }
+  .chart-bar-count { min-width: 30px; font-size: 12px; color: var(--gray-text); }
+
+  /* Naming rule settings */
+  .rule-token {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--gray-bg);
+    border: 1.5px solid var(--gray-border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: grab;
+  }
+  .rule-token.dragging { opacity: 0.5; }
+  .sep-input {
+    width: 60px;
+    border: 1.5px solid var(--gray-border);
+    border-radius: 4px;
+    padding: 4px 6px;
+    font-size: 13px;
+    text-align: center;
+    font-family: 'Courier New', monospace;
+  }
+
+  .notice { padding: 12px 16px; border-radius: 6px; font-size: 13px; margin-bottom: 16px; }
+  .notice-info { background: #e7f0ff; color: #1464d8; border-left: 3px solid var(--blue); }
+  .notice-success { background: #f0fff4; color: #276749; border-left: 3px solid var(--green); }
+
+  .empty-state { text-align: center; padding: 40px; color: var(--gray-text); }
+  .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+
+  .actions-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 10px;
+    padding: 24px;
+    width: 90%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+  .modal h2 { font-size: 16px; margin-bottom: 16px; }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #1c1e21;
+    color: white;
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 9999;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.25s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<header>
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="4" fill="white" fill-opacity="0.2"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15v-4H7l5-8v4h4l-5 8z" fill="white"/></svg>
+  <h1>Meta クリエイティブ管理</h1>
+  <span class="badge" id="header-count">0件</span>
+</header>
+
+<div class="container">
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('new')">✏️ 新規登録</div>
+    <div class="tab" onclick="showTab('list')">📋 一覧</div>
+    <div class="tab" onclick="showTab('analytics')">📊 分析</div>
+    <div class="tab" onclick="showTab('settings')">⚙️ 命名設定</div>
+  </div>
+
+  <!-- 新規登録 -->
+  <div id="panel-new" class="panel active">
+    <div class="card">
+      <h2>クリエイティブ情報入力</h2>
+      <div class="form-grid" id="form-fields"></div>
+      <div style="margin-top:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <label style="font-size:12px;font-weight:700;color:var(--gray-text);text-transform:uppercase;letter-spacing:0.4px;">生成される命名</label>
+          <button class="copy-btn" onclick="copyPreviewName()">コピー</button>
+        </div>
+        <div class="name-preview" id="name-preview"><span class="placeholder">入力すると命名が生成されます</span></div>
+      </div>
+      <div class="form-grid" style="margin-top:12px;">
+        <div class="form-group">
+          <label>メモ（任意）</label>
+          <textarea id="field-memo" rows="2" placeholder="備考など"></textarea>
+        </div>
+        <div class="form-group">
+          <label>ステータス</label>
+          <select id="field-status">
+            <option value="draft">下書き</option>
+            <option value="review">レビュー中</option>
+            <option value="approved">承認済</option>
+            <option value="active">配信中</option>
+            <option value="paused">停止</option>
+          </select>
+        </div>
+      </div>
+      <div class="actions-row">
+        <button class="btn btn-secondary" onclick="clearForm()">クリア</button>
+        <button class="btn btn-primary" onclick="saveCreative()">💾 登録する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 一覧 -->
+  <div id="panel-list" class="panel">
+    <div class="card">
+      <div class="search-row">
+        <input class="search-input" id="search-input" placeholder="🔍 命名・メモで検索..." oninput="renderList()">
+        <select class="filter-select" id="filter-status" onchange="renderList()">
+          <option value="">すべてのステータス</option>
+          <option value="draft">下書き</option>
+          <option value="review">レビュー中</option>
+          <option value="approved">承認済</option>
+          <option value="active">配信中</option>
+          <option value="paused">停止</option>
+        </select>
+        <select class="filter-select" id="filter-field" onchange="renderList()">
+          <option value="">全フィールドで絞り込み</option>
+        </select>
+        <select class="filter-select" id="filter-value" onchange="renderList()">
+          <option value="">値を選択</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" onclick="exportCSV()">📥 CSV出力</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>命名</th>
+              <th>ステータス</th>
+              <th>メモ</th>
+              <th>登録日</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="list-body"></tbody>
+        </table>
+      </div>
+      <div id="list-empty" class="empty-state" style="display:none">
+        <div class="icon">📭</div>
+        <div>クリエイティブが見つかりません</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 分析 -->
+  <div id="panel-analytics" class="panel">
+    <div class="stats-grid" id="stats-grid"></div>
+    <div id="charts-container"></div>
+  </div>
+
+  <!-- 設定 -->
+  <div id="panel-settings" class="panel">
+    <div class="card">
+      <h2>命名ルール設定</h2>
+      <div class="notice notice-info">
+        命名に含める項目と順番を設定します。各フィールドの選択肢も設定できます。
+      </div>
+
+      <h3>フィールド定義</h3>
+      <div id="field-defs"></div>
+      <div style="margin-top:12px;">
+        <button class="btn btn-secondary btn-sm" onclick="addFieldDef()">＋ フィールドを追加</button>
+      </div>
+
+      <div style="margin-top:24px;">
+        <h3>区切り文字</h3>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:13px;">フィールド間の区切り文字:</span>
+          <input class="sep-input" id="sep-input" value="_" maxlength="3">
+        </div>
+      </div>
+
+      <div class="actions-row">
+        <button class="btn btn-secondary" onclick="resetSettings()">デフォルトに戻す</button>
+        <button class="btn btn-primary" onclick="saveSettings()">💾 設定を保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal">
+    <h2>クリエイティブ詳細</h2>
+    <div id="modal-content"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">
+      <button class="btn btn-danger btn-sm" id="modal-delete-btn">削除</button>
+      <button class="btn btn-secondary" onclick="closeModal()">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// State
+// ============================================================
+const DEFAULT_FIELDS = [
+  { id: 'product',   label: '商品/ブランド', required: true,  options: ['SampleA','SampleB','SampleC'] },
+  { id: 'target',    label: 'ターゲット',    required: true,  options: ['20代女性','30代男性','全年齢','リタゲ'] },
+  { id: 'format',    label: 'フォーマット',  required: true,  options: ['静止画','動画','カルーセル','ストーリーズ'] },
+  { id: 'concept',   label: 'コンセプト',    required: true,  options: ['価格訴求','ブランド','機能訴求','口コミ'] },
+  { id: 'size',      label: 'サイズ',        required: false, options: ['1x1','4x5','9x16','16x9'] },
+  { id: 'version',   label: 'バージョン',    required: true,  options: ['v1','v2','v3','v4','v5'] },
+];
+
+let settings = loadSettings();
+let creatives = loadCreatives();
+
+function loadSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem('meta_cr_settings') || 'null');
+    if (s) return s;
+  } catch(e) {}
+  return { fields: JSON.parse(JSON.stringify(DEFAULT_FIELDS)), sep: '_' };
+}
+
+function loadCreatives() {
+  try {
+    return JSON.parse(localStorage.getItem('meta_cr_creatives') || '[]');
+  } catch(e) { return []; }
+}
+
+function saveToStorage() {
+  localStorage.setItem('meta_cr_creatives', JSON.stringify(creatives));
+  updateHeaderCount();
+}
+
+function saveSettingsToStorage() {
+  localStorage.setItem('meta_cr_settings', JSON.stringify(settings));
+}
+
+function updateHeaderCount() {
+  document.getElementById('header-count').textContent = creatives.length + '件';
+}
+
+// ============================================================
+// Tabs
+// ============================================================
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    const tabs = ['new','list','analytics','settings'];
+    t.classList.toggle('active', tabs[i] === name);
+  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  if (name === 'list') { renderList(); buildListFilters(); }
+  if (name === 'analytics') renderAnalytics();
+  if (name === 'settings') renderSettingsForm();
+}
+
+// ============================================================
+// Form
+// ============================================================
+function buildForm() {
+  const container = document.getElementById('form-fields');
+  container.innerHTML = '';
+  settings.fields.forEach(f => {
+    const div = document.createElement('div');
+    div.className = 'form-group';
+    div.innerHTML = `
+      <label>${f.label}${f.required ? ' <span style="color:var(--red)">*</span>' : ''}</label>
+      <select id="field-${f.id}" onchange="updatePreview()">
+        <option value="">-- 選択 --</option>
+        ${f.options.map(o => `<option value="${o}">${o}</option>`).join('')}
+      </select>
+    `;
+    container.appendChild(div);
+  });
+  updatePreview();
+}
+
+function getFormValues() {
+  const vals = {};
+  settings.fields.forEach(f => {
+    const el = document.getElementById('field-' + f.id);
+    vals[f.id] = el ? el.value : '';
+  });
+  return vals;
+}
+
+function buildName(vals) {
+  const parts = settings.fields
+    .filter(f => vals[f.id])
+    .map(f => vals[f.id]);
+  return parts.join(settings.sep);
+}
+
+function updatePreview() {
+  const vals = getFormValues();
+  const name = buildName(vals);
+  const el = document.getElementById('name-preview');
+  if (name) {
+    el.innerHTML = `<strong>${escHtml(name)}</strong>`;
+  } else {
+    el.innerHTML = '<span class="placeholder">入力すると命名が生成されます</span>';
+  }
+}
+
+function copyPreviewName() {
+  const vals = getFormValues();
+  const name = buildName(vals);
+  if (!name) { showToast('先に情報を入力してください'); return; }
+  navigator.clipboard.writeText(name).then(() => showToast('コピーしました！'));
+}
+
+function clearForm() {
+  settings.fields.forEach(f => {
+    const el = document.getElementById('field-' + f.id);
+    if (el) el.value = '';
+  });
+  document.getElementById('field-memo').value = '';
+  document.getElementById('field-status').value = 'draft';
+  updatePreview();
+}
+
+function saveCreative() {
+  const vals = getFormValues();
+  const missing = settings.fields.filter(f => f.required && !vals[f.id]);
+  if (missing.length) {
+    showToast('必須項目を入力してください: ' + missing.map(f => f.label).join(', '));
+    return;
+  }
+  const name = buildName(vals);
+  const cr = {
+    id: Date.now().toString(),
+    name,
+    fields: vals,
+    memo: document.getElementById('field-memo').value,
+    status: document.getElementById('field-status').value,
+    createdAt: new Date().toISOString(),
+  };
+  creatives.unshift(cr);
+  saveToStorage();
+  showToast('✅ 登録しました: ' + name);
+  clearForm();
+}
+
+// ============================================================
+// List
+// ============================================================
+const STATUS_LABELS = { draft:'下書き', review:'レビュー中', approved:'承認済', active:'配信中', paused:'停止' };
+const STATUS_TAGS = { draft:'tag-gray', review:'tag-yellow', approved:'tag-green', active:'tag-blue', paused:'tag-red' };
+
+function getFilteredCreatives() {
+  const q = (document.getElementById('search-input')?.value || '').toLowerCase();
+  const st = document.getElementById('filter-status')?.value || '';
+  const ff = document.getElementById('filter-field')?.value || '';
+  const fv = document.getElementById('filter-value')?.value || '';
+  return creatives.filter(c => {
+    if (q && !c.name.toLowerCase().includes(q) && !(c.memo||'').toLowerCase().includes(q)) return false;
+    if (st && c.status !== st) return false;
+    if (ff && fv && c.fields[ff] !== fv) return false;
+    return true;
+  });
+}
+
+function renderList() {
+  const list = getFilteredCreatives();
+  const tbody = document.getElementById('list-body');
+  tbody.innerHTML = '';
+  document.getElementById('list-empty').style.display = list.length ? 'none' : 'block';
+  list.forEach((c, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="color:var(--gray-text)">${i+1}</td>
+      <td>
+        <div class="name-cell">${escHtml(c.name)}</div>
+      </td>
+      <td><span class="tag ${STATUS_TAGS[c.status]||'tag-gray'}">${STATUS_LABELS[c.status]||c.status}</span></td>
+      <td style="color:var(--gray-text);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(c.memo||'')}</td>
+      <td style="color:var(--gray-text);white-space:nowrap">${formatDate(c.createdAt)}</td>
+      <td>
+        <button class="btn btn-secondary btn-sm" onclick="openDetail('${c.id}')">詳細</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function buildListFilters() {
+  const fieldSel = document.getElementById('filter-field');
+  fieldSel.innerHTML = '<option value="">全フィールドで絞り込み</option>';
+  settings.fields.forEach(f => {
+    const opt = document.createElement('option');
+    opt.value = f.id;
+    opt.textContent = f.label;
+    fieldSel.appendChild(opt);
+  });
+  document.getElementById('filter-value').innerHTML = '<option value="">値を選択</option>';
+  fieldSel.onchange = () => {
+    const fid = fieldSel.value;
+    const valSel = document.getElementById('filter-value');
+    valSel.innerHTML = '<option value="">値を選択</option>';
+    if (fid) {
+      const field = settings.fields.find(f => f.id === fid);
+      if (field) field.options.forEach(o => {
+        const opt = document.createElement('option');
+        opt.value = o; opt.textContent = o;
+        valSel.appendChild(opt);
+      });
+    }
+    renderList();
+  };
+}
+
+function openDetail(id) {
+  const c = creatives.find(x => x.id === id);
+  if (!c) return;
+  const content = document.getElementById('modal-content');
+  content.innerHTML = `
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--gray-text);text-transform:uppercase;margin-bottom:4px">命名</div>
+      <div style="font-family:monospace;font-size:13px;background:var(--gray-bg);padding:10px;border-radius:6px;word-break:break-all">${escHtml(c.name)}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      ${settings.fields.map(f => `
+        <div>
+          <div style="font-size:11px;color:var(--gray-text);font-weight:600">${f.label}</div>
+          <div style="font-size:13px;font-weight:500">${c.fields[f.id]||'—'}</div>
+        </div>
+      `).join('')}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div>
+        <div style="font-size:11px;color:var(--gray-text);font-weight:600">ステータス</div>
+        <span class="tag ${STATUS_TAGS[c.status]||'tag-gray'}">${STATUS_LABELS[c.status]||c.status}</span>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--gray-text);font-weight:600">登録日</div>
+        <div style="font-size:13px">${formatDate(c.createdAt)}</div>
+      </div>
+    </div>
+    ${c.memo ? `<div style="margin-top:12px"><div style="font-size:11px;color:var(--gray-text);font-weight:600">メモ</div><div style="font-size:13px">${escHtml(c.memo)}</div></div>` : ''}
+    <div style="margin-top:12px">
+      <div style="font-size:11px;color:var(--gray-text);font-weight:600;margin-bottom:4px">ステータス変更</div>
+      <select id="modal-status" style="border:1.5px solid var(--gray-border);border-radius:6px;padding:6px 10px;font-size:13px">
+        ${Object.entries(STATUS_LABELS).map(([v,l]) => `<option value="${v}"${c.status===v?' selected':''}>${l}</option>`).join('')}
+      </select>
+      <button class="btn btn-primary btn-sm" style="margin-left:8px" onclick="updateStatus('${c.id}')">更新</button>
+    </div>
+  `;
+  document.getElementById('modal-delete-btn').onclick = () => deleteCreative(id);
+  document.getElementById('detail-modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('detail-modal').classList.remove('open');
+}
+
+function updateStatus(id) {
+  const c = creatives.find(x => x.id === id);
+  if (!c) return;
+  c.status = document.getElementById('modal-status').value;
+  saveToStorage();
+  showToast('ステータスを更新しました');
+  closeModal();
+  renderList();
+}
+
+function deleteCreative(id) {
+  if (!confirm('削除してよいですか？')) return;
+  creatives = creatives.filter(c => c.id !== id);
+  saveToStorage();
+  showToast('削除しました');
+  closeModal();
+  renderList();
+}
+
+// ============================================================
+// Analytics
+// ============================================================
+function renderAnalytics() {
+  const total = creatives.length;
+  const statuses = {};
+  Object.keys(STATUS_LABELS).forEach(k => statuses[k] = 0);
+  creatives.forEach(c => { if (statuses[c.status] !== undefined) statuses[c.status]++; });
+
+  // Stats
+  const statsGrid = document.getElementById('stats-grid');
+  statsGrid.innerHTML = `
+    <div class="stat-card"><div class="num">${total}</div><div class="lbl">総クリエイティブ数</div></div>
+    <div class="stat-card"><div class="num" style="color:var(--blue)">${statuses.active}</div><div class="lbl">配信中</div></div>
+    <div class="stat-card"><div class="num" style="color:var(--green)">${statuses.approved}</div><div class="lbl">承認済</div></div>
+    <div class="stat-card"><div class="num" style="color:var(--yellow)">${statuses.review}</div><div class="lbl">レビュー中</div></div>
+    <div class="stat-card"><div class="num" style="color:var(--gray-text)">${statuses.draft}</div><div class="lbl">下書き</div></div>
+  `;
+
+  if (total === 0) {
+    document.getElementById('charts-container').innerHTML = '<div class="empty-state"><div class="icon">📊</div><div>クリエイティブを登録すると分析が表示されます</div></div>';
+    return;
+  }
+
+  // Charts per field
+  const container = document.getElementById('charts-container');
+  container.innerHTML = '';
+  settings.fields.forEach(f => {
+    const counts = {};
+    creatives.forEach(c => {
+      const v = c.fields[f.id] || '(未設定)';
+      counts[v] = (counts[v] || 0) + 1;
+    });
+    const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+    const max = sorted[0]?.[1] || 1;
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `<h3>${f.label}別 内訳</h3>` +
+      sorted.map(([label, cnt]) => `
+        <div class="chart-bar-row">
+          <div class="chart-bar-label" title="${escHtml(label)}">${escHtml(label)}</div>
+          <div class="chart-bar-bg">
+            <div class="chart-bar-fill" style="width:${Math.round(cnt/max*100)}%">
+              ${cnt >= 2 ? `<span>${cnt}</span>` : ''}
+            </div>
+          </div>
+          <div class="chart-bar-count">${cnt}</div>
+        </div>
+      `).join('');
+    container.appendChild(card);
+  });
+}
+
+// ============================================================
+// Settings
+// ============================================================
+function renderSettingsForm() {
+  const container = document.getElementById('field-defs');
+  container.innerHTML = '';
+  settings.fields.forEach((f, i) => {
+    const div = document.createElement('div');
+    div.style.cssText = 'display:grid;grid-template-columns:1fr 1fr auto auto;gap:8px;align-items:start;margin-bottom:10px;padding:12px;background:var(--gray-bg);border-radius:8px';
+    div.innerHTML = `
+      <div class="form-group">
+        <label>フィールド名</label>
+        <input value="${escHtml(f.label)}" onchange="settings.fields[${i}].label=this.value">
+      </div>
+      <div class="form-group">
+        <label>選択肢（カンマ区切り）</label>
+        <input value="${f.options.join(',')}" onchange="settings.fields[${i}].options=this.value.split(',').map(s=>s.trim()).filter(Boolean)">
+      </div>
+      <div class="form-group" style="align-items:center;justify-content:flex-end;flex-direction:row;gap:6px;padding-top:18px">
+        <label style="font-size:12px;color:var(--gray-text)">必須</label>
+        <input type="checkbox" ${f.required?'checked':''} onchange="settings.fields[${i}].required=this.checked" style="width:16px;height:16px">
+      </div>
+      <button class="btn btn-danger btn-sm btn-icon" style="margin-top:18px" onclick="removeField(${i})" title="削除">✕</button>
+    `;
+    container.appendChild(div);
+  });
+  document.getElementById('sep-input').value = settings.sep;
+}
+
+function addFieldDef() {
+  settings.fields.push({ id: 'field_' + Date.now(), label: '新フィールド', required: false, options: [] });
+  renderSettingsForm();
+}
+
+function removeField(i) {
+  settings.fields.splice(i, 1);
+  renderSettingsForm();
+}
+
+function saveSettings() {
+  settings.sep = document.getElementById('sep-input').value || '_';
+  saveSettingsToStorage();
+  buildForm();
+  showToast('✅ 設定を保存しました');
+}
+
+function resetSettings() {
+  if (!confirm('デフォルト設定に戻しますか？')) return;
+  settings = { fields: JSON.parse(JSON.stringify(DEFAULT_FIELDS)), sep: '_' };
+  saveSettingsToStorage();
+  renderSettingsForm();
+  buildForm();
+  showToast('デフォルトに戻しました');
+}
+
+// ============================================================
+// CSV Export
+// ============================================================
+function exportCSV() {
+  const list = getFilteredCreatives();
+  if (!list.length) { showToast('データがありません'); return; }
+  const headers = ['命名', ...settings.fields.map(f => f.label), 'ステータス', 'メモ', '登録日'];
+  const rows = list.map(c => [
+    c.name,
+    ...settings.fields.map(f => c.fields[f.id] || ''),
+    STATUS_LABELS[c.status] || c.status,
+    c.memo || '',
+    formatDate(c.createdAt),
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'meta_creatives_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+// ============================================================
+// Utilities
+// ============================================================
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function formatDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// Close modal on overlay click
+document.getElementById('detail-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ============================================================
+// Init
+// ============================================================
+buildForm();
+updateHeaderCount();
+</script>
+</body>
+</html>
