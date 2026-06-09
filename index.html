@@ -674,7 +674,6 @@ function buildUtmUrl(vals,ov){
   const medium=ov.medium??u.medium; const campaign=ov.campaign??u.campaign; const content=ov.content??u.content;
   const term=u.termField?(vals[u.termField]||''):'';
   if(!u.baseUrl)return'';
-  const base=u.baseUrl.replace(/\/?$/,'/')++'?'; // intentional bug fix:
   const b=u.baseUrl.replace(/\/?$/,'/');
   const params=[];
   if(source)params.push(['utm_source',source]);
@@ -724,7 +723,6 @@ function updateUtmUrlOnly(){
   const url=buildUtmUrl(formState,utmOverride);
   const box=document.getElementById('utm-url-preview');
   if(!url){box.textContent='—';return;}
-  const b=settings.utm.baseUrl.replace(/\/?$/,'/')++'?';
   const base2=settings.utm.baseUrl.replace(/\/?$/,'/');
   const params=url.slice(base2.length+1);
   box.innerHTML=`<span style="color:var(--text-3)">${esc(base2+'?')}</span>`+
