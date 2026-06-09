@@ -900,6 +900,14 @@ function buildForm() {
     `;
     container.appendChild(block);
 
+    // テキスト入力欄を追加
+    const textInput = document.createElement('input');
+    textInput.type = 'text';
+    textInput.placeholder = '直接入力...';
+    textInput.style.cssText = 'margin-top:8px;font-size:12px;padding:7px 10px;';
+    textInput.id = 'text-' + f.id;
+    block.appendChild(textInput);
+
     const group = block.querySelector('.chip-group');
     f.options.forEach(opt => {
       const chip = document.createElement('div');
@@ -908,12 +916,21 @@ function buildForm() {
       chip.addEventListener('click', () => {
         const already = formState[f.id] === opt;
         formState[f.id] = already ? '' : opt;
+        // チップ選択時はテキスト入力をクリア
+        textInput.value = '';
         group.querySelectorAll('.chip').forEach(c => {
           c.classList.toggle('selected', c.textContent === formState[f.id] && formState[f.id] !== '');
         });
         updateNamePreview();
       });
       group.appendChild(chip);
+    });
+
+    // テキスト入力時はチップ選択を解除して手入力優先
+    textInput.addEventListener('input', () => {
+      formState[f.id] = textInput.value.trim();
+      group.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+      updateNamePreview();
     });
   });
   updateNamePreview();
@@ -948,7 +965,11 @@ function copyPreviewName() {
 
 function clearForm() {
   formState = {};
-  settings.fields.forEach(f => formState[f.id] = '');
+  settings.fields.forEach(f => {
+    formState[f.id] = '';
+    const ti = document.getElementById('text-' + f.id);
+    if (ti) ti.value = '';
+  });
   document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
   document.getElementById('field-memo').value = '';
   document.getElementById('field-status').value = 'draft';
